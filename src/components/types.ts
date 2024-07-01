@@ -1,8 +1,8 @@
-export type InitialState = {
-  week: Array<Day>,
-  interval: 0;
-  lifeTime: 0;
-  attempts: 0;
+export type DataSettings = {
+  week: Array<Day>;
+  interval: number;
+  lifeTime: number;
+  attempts: number;
   defaultQueue: string;
   excludedNumbers: [];
   robotState: string;
@@ -15,4 +15,16 @@ export type Day = {
   timeTo: string;
   isActive: boolean;
   isChoose: boolean;
+};
+
+export type SettingsData = {
+  weekDays: Array<object>;
+  attempt: number;
+  intensity: number;
+  lifetime: number;
+  running: string;
+  robotState: number;
+  defaultQueueName: string;
+  useDefaultQueue: number;
+  ignoreCompanyNumbers: Array<string>;
 };

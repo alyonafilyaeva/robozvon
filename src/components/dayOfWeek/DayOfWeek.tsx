@@ -2,13 +2,15 @@ import { Box, Checkbox, Switch, Typography } from '@mui/material';
 import SalevanStore from '../../store/SalevanStore';
 import { Day } from '../types';
 import { observer } from 'mobx-react-lite';
+import { WeekDays } from '../../enums/enums';
 
 export type DayProps = {
     day: Day,
-
+    title: string
 }
 const DayOfWeek = observer((props: DayProps) => {
-    const { isChooseChange, isActiveChange } = SalevanStore;
+    const { isChooseChange, isActiveChange, arrayChooseDays } = SalevanStore;
+    const title = props.title
     console.log()
     return (
         <Box display='flex'
@@ -28,17 +30,17 @@ const DayOfWeek = observer((props: DayProps) => {
                 alignItems='center'
                 gap={2}>
                 <Checkbox
-                    checked={props.day.isChoose}
-                    onChange={(event) => isChooseChange(props?.day.id, event?.target.checked)}
+                    checked={arrayChooseDays.includes(title)}
+                    onChange={(event) => isChooseChange(title, event?.target.checked)}
                 />
-                <Typography display='block' textAlign='start'>{props?.day?.title}</Typography>
+                <Typography display='block' textAlign='start'>{WeekDays[title]}</Typography>
             </Box>
             <Box display='flex'
                 flexDirection='row'
                 alignItems='center'
                 gap={6}>
-                <Typography>{props?.day?.timeFrom} - {props?.day?.timeTo}</Typography>
-                <Switch checked={props.day.isActive} onChange={(event) => isActiveChange(props?.day.id, event?.target.checked)}></Switch>
+                <Typography>{props?.day?.start.substr(0,5)} - {props?.day?.end.substr(0,5)}</Typography>
+                <Switch checked={props.day.is_active} onChange={(event) => isActiveChange(title, event?.target.checked)}></Switch>
             </Box>
 
         </Box>

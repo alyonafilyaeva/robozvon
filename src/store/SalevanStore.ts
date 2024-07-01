@@ -1,8 +1,12 @@
-import { Day } from "../components/types";
+import axios from "axios";
+import { Day, SettingsData } from "../components/types";
 import { makeAutoObservable } from "mobx";
+import { EditSettings, GetSettings } from "../api";
+import { WeekDays } from "../enums/enums";
 
 class SalevanStore {
-  week: Array<Day> = [
+  data: SettingsData = {};
+  /* week: Array<Day> = [
     {
       id: 1,
       title: "Понедельник",
@@ -59,55 +63,66 @@ class SalevanStore {
       isActive: false,
       isChoose: false,
     },
-  ];
-  interval: number = 0;
-  lifeTime: number = 0;
-  attempts: number = 0;
+  ]; */
+  /* intensity: number = 0;
+  lifetime: number = 0;
+  attempt: number = 0; */
   defaultQueue: string = "Выключен";
-  arrayQueue: Array<object> = [
+  arrayQueueOptions: Array<object> = [
     { label: "AAAA", id: 1 },
     { label: "BBBB", id: 2 },
   ];
-  excludedNumbers: Array<object> = [
+  itemQueueId: number = 0;
+  excludedNumbersOptions: Array<object> = [
     { label: "AAAA", id: 1 },
     { label: "BBBB", id: 2 },
+    { label: "CCCC", id: 3 },
   ];
+  excludedNumbers: Array<object> = [];
   robotState: string = "Выключен";
-  allTimeFrom: string = "00:00";
-  allTimeTo: string = "00:00";
-  arrayChooseDays: Array<number> = [];
+  allTimeFrom: string = "";
+  allTimeTo: string = "";
+  arrayChooseDays: Array<string> = [];
+  allIsActive: boolean = false;
+  allIsChoose: boolean = false;
+  isLoading: boolean = false
 
   constructor() {
     makeAutoObservable(this);
   }
 
-  intervalChange = (currentInterval: string) => {
-    this.interval = +currentInterval;
+  intervalChange = (currentIntensity: string) => {
+    this.data.intensity = +currentIntensity;
   };
 
   lifeTimeChange = (currentLifeTime: string) => {
-    this.lifeTime = +currentLifeTime;
+    this.data.lifetime = +currentLifeTime;
   };
 
-  attemptsChange = (currentAttempts: string) => {
-    this.attempts = +currentAttempts;
+  attemptsChange = (currentAttempt: string) => {
+    this.data.attempt = +currentAttempt;
   };
 
   robotStateChange = (cuurentRobotState: string) => {
-    this.robotState = cuurentRobotState;
+    this.data.robotState = +cuurentRobotState;
   };
 
   defaultQueueChange = (currentDefaultQueue: string) => {
-    this.defaultQueue = currentDefaultQueue;
+    this.data.defaultQueueName = currentDefaultQueue;
   };
 
-  isChooseChange = (id: number, checked: boolean) => {
-    this.week[id - 1].isChoose = checked;
-    this.arrayChooseDays.push(id);
+  isChooseChange = (dayKey: string, checked: boolean) => {
+    if (checked) {
+      this.arrayChooseDays.push(dayKey);
+    } else {
+      const index = this.arrayChooseDays.indexOf(dayKey)
+      this.arrayChooseDays.splice(index, 1)
+    }
+    console.log(this.arrayChooseDays)
   };
 
-  isActiveChange = (id: number, checked: boolean) => {
-    this.week[id - 1].isActive = checked;
+  isActiveChange = (dayKey: string, checked: boolean) => {
+    this.data.weekDays[dayKey].isActive = checked;
   };
 
   allTimeFromChange = (currentTimeFrom: string) => {
@@ -119,11 +134,71 @@ class SalevanStore {
   };
 
   allTimeChange = () => {
+    console.log(this.arrayChooseDays)
     for (let i = 0; i < this.arrayChooseDays.length; i++) {
-      this.week[this.arrayChooseDays[i]-1].timeFrom = this.allTimeFrom;
-      this.week[this.arrayChooseDays[i]-1].timeTo = this.allTimeTo;
+      this.data.weekDays[this.arrayChooseDays[i]].start = this.allTimeFrom;
+      this.data.weekDays[this.arrayChooseDays[i]].end = this.allTimeTo;
     }
   };
+
+  allIsActiveChange = (currentAllIsActive: boolean) => {
+    const keys = Object.keys(this.data.weekDays)
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i]
+      this.data.weekDays[key].is_active = currentAllIsActive;
+    }
+    this.allIsActive = currentAllIsActive;
+  };
+
+  allIsChooseChange = (currentAllIsChoose: boolean) => {
+    const keys = Object.keys(this.data.weekDays)
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i]
+      currentAllIsChoose 
+      ? this.arrayChooseDays.push(key)
+      : this.arrayChooseDays = []
+    }
+    this.allIsActive = currentAllIsChoose;
+  };
+
+  defaultQueueItemChange = (currentDefaultQueueItem: number) => {
+    this.itemQueueId = currentDefaultQueueItem;
+  };
+
+  excludedNumbersChange = (currentExcludedNumber: object) => {
+    this.excludedNumbers.push(currentExcludedNumber);
+  };
+
+  setIsLoading = (status: boolean) => {
+    this.isLoading = status
+  }
+
+  getSettingsRequest = (settingsData: object) => {
+    this.data.weekDays = settingsData.week_days
+    this.data.defaultQueueName = settingsData.default_queue_name
+    this.data.ignoreCompanyNumbers = settingsData.ignore_company_numbers
+    this.data.useDefaultQueue = settingsData.use_default_queue
+    this.data.attempt = settingsData.attempt
+    this.data.intensity = settingsData.intensity
+    this.data.lifetime = settingsData.lifetime
+    this.data.running = settingsData.running
+    this.data.robotState = settingsData.switch
+  }
+
+  editSettingsRequest = () => {
+    const post = {week_days: this.data.weekDays,
+    attempt: this.data.attempt,
+    intensity: this.data.intensity,
+    lifetime: this.data.lifetime,
+    running: this.data.running,
+    // 0=Выключен, 1=включен, 2=дремлет
+    switch: this.data.robotState,
+    default_queue_name: this.data.defaultQueueName,
+    use_default_queue: this.data.useDefaultQueue,
+    ignore_company_numbers: this.data.ignoreCompanyNumbers}
+    console.log(post)
+  }
+  
 }
 
 export default new SalevanStore();
