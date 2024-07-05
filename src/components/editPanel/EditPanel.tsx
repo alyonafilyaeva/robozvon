@@ -1,17 +1,51 @@
-import { Box, Button, Checkbox, Switch, TextField, Typography } from '@mui/material'
+import { Box, Checkbox, Switch, TextField, Typography } from '@mui/material'
 import SalevanStore from '../../store/SalevanStore'
 import { observer } from 'mobx-react-lite'
 import { PatternFormat } from 'react-number-format';
-import { Day } from '../types';
+import React from 'react';
 
 const EditPanel = observer(() => {
-    const { data, allTimeFrom, allTimeTo, allIsActive, allIsChoose, allTimeFromChange, 
-        allTimeToChange, allTimeChange, allIsActiveChange, allIsChooseChange } = SalevanStore;
+    const { allIsActive,
+        arrayChooseDays,
+        errorTimeFrom,
+        errorTimeTo,
+        allTimeFrom,
+        timeFromChange,
+        timeToChange,
+        allIsActiveChange,
+        allIsChooseChange,
+        errorTimeFromChange,
+        errorTimeToChange
+    } = SalevanStore;
+
+    /* const [errorTimeFrom, setErrorTimeFrom] = useState<boolean>()
+    const [errorTimeTo, setErrorTimeTo] = useState<boolean>() */
+    const handleChangeTimeFrom = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (event.target.validity.valid) {
+            errorTimeFromChange(false)
+        } else {
+            errorTimeFromChange(true)
+        }
+        timeFromChange(event.target.value)
+
+    }
+    const handleChangeTimeTo = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (event.target.validity.valid) {
+            errorTimeToChange(false)
+        } else {
+            errorTimeToChange(true)
+        }
+        timeToChange(event.target.value)
+    }
+
+    const handleAllIsActive = (event: React.ChangeEvent<HTMLInputElement>) => {
+        allIsActiveChange(event.target.checked)
+    }
+
     return (
         <Box>
             <Box display='flex' flexDirection='row' justifyContent='space-between' alignItems='center'>
                 <Typography variant='h6'>Дни недели</Typography>
-                {/* isChoose && */ <Button variant="outlined" onClick={allTimeChange}>Изменить время</Button>}
             </Box>
             <Box display='flex'
                 flexDirection='row'
@@ -43,7 +77,15 @@ const EditPanel = observer(() => {
                             mask="_"
                             size='small'
                             customInput={TextField}
-                            onChange={(event) => allTimeFromChange(event.target.value)}
+                            maxLength={5}
+                            onChange={handleChangeTimeFrom}
+                            placeholder='00:00'
+                            disabled={arrayChooseDays.length === 0}
+                            error={errorTimeFrom}
+                            inputProps={{
+                                pattern: "^([01][0-9]|2[0-3]):([0-5][0-9])$",
+                            }}
+                            required
                         >
                         </PatternFormat>
                         <Typography>-</Typography>
@@ -52,11 +94,18 @@ const EditPanel = observer(() => {
                             mask="_"
                             size='small'
                             customInput={TextField}
-                            onChange={(event) => allTimeToChange(event.target.value)}
+                            onChange={handleChangeTimeTo}
+                            placeholder='23:59'
+                            disabled={arrayChooseDays.length === 0}
+                            error={errorTimeTo}
+                            inputProps={{
+                                pattern: "^([01][0-9]|2[0-3]):([0-5][0-9])$",
+                            }}
+                            id='timeTo'
                         >
                         </PatternFormat>
                     </Box>
-                    <Switch value={allIsActive} onChange={(event) => allIsActiveChange(event.target.checked)}></Switch>
+                    <Switch value={allIsActive} onChange={handleAllIsActive}></Switch>
                 </Box>
             </Box>
         </Box>

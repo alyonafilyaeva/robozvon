@@ -1,10 +1,8 @@
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
-import { useState } from "react";
-import SalevanStore from "../store/SalevanStore";
 
 const mock = new MockAdapter(axios, { delayResponse: 2000 });
-const { getSettingsRequest, setIsLoading} = SalevanStore;
+/* const { getSettingsRequest, setIsLoading} = SalevanStore; */
 
 mock.onGet("/settings").reply(200, {
     "week_days": {
@@ -49,22 +47,14 @@ mock.onGet("/settings").reply(200, {
     "lifetime": 3,
     "running": "sleep",
     "switch":1,
-    "default_queue_name": 'AAAA',
-    "use_default_queue": 3,
+    "default_queue_name": '',
+    "use_default_queue": 1,
     "ignore_company_numbers":['AAAA', 'CCCC']
 });
 
 
 export const GetSettings = () => {
-    setIsLoading(true)
-  axios
-    .get("/settings")
-    .then(response => {
-        getSettingsRequest(response.data)
-        console.log('Success');
-      })
-    .catch((error) => console.log(error))
-    .finally(() => {setIsLoading(false)})
+  return axios.get("/settings")
 };
 
 export const EditSettings = (data: object) => {

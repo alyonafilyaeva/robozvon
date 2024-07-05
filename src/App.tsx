@@ -1,18 +1,25 @@
 import './App.css'
-import { Autocomplete, Box, Button, FormControlLabel, Radio, RadioGroup, TextField, Typography } from '@mui/material'
+import {
+  Autocomplete,
+  Box,
+  Button,
+  CircularProgress,
+  FormControlLabel,
+  Radio,
+  RadioGroup,
+  TextField,
+  Typography
+} from '@mui/material'
 import Days from './components/days/Days'
 import { observer } from 'mobx-react-lite'
 import SalevanStore from './store/SalevanStore'
-import { PatternFormat, NumericFormat } from 'react-number-format'
-import { useEffect, useState } from 'react'
-import { EditSettings, GetSettings } from './api'
-import axios from 'axios'
+import { NumericFormat } from 'react-number-format'
+import { useEffect } from 'react'
+import { RadioQueue, RadioRobotState } from './enums/enums'
+import { SelectValues } from './components/types'
 
 const App = observer(() => {
-  const { week,
-    defaultQueue,
-    itemQueueId,
-    excludedNumbers,
+  const {
     arrayQueueOptions,
     excludedNumbersOptions,
     intervalChange,
@@ -23,52 +30,85 @@ const App = observer(() => {
     defaultQueueItemChange,
     excludedNumbersChange,
     editSettingsRequest,
+    getSettingsRequest,
     data,
-    isLoading } = SalevanStore
+    isLoading
+  } = SalevanStore;
 
-  const { weekDays, 
+  const { weekDays,
     intensity,
     lifetime,
-    attempt, 
-    running, 
-    robotState, 
-    defaultQueueName, 
-    useDefaultQueue, 
-    ignoreCompanyNumbers } = data
-  
-    const store = {
-    intensity: intensity,
-    lifetime: lifetime,
-    attempt: attempt,
-    defaultQueue: defaultQueue,
-    itemQueueId: itemQueueId,
-    robotState: robotState,
-    excludedNumbers: excludedNumbers,
-    week: week
-  }
+    attempt,
+    robotState,
+    defaultQueueName,
+    useDefaultQueue,
+    ignoreCompanyNumbers
+  } = data ?? {};
 
   useEffect(() => {
-    GetSettings()
+    getSettingsRequest()
   }, [])
-  console.log(data)
+
+  const chooseIgnoreCompanyNumbers = excludedNumbersOptions.filter((item) => ignoreCompanyNumbers?.indexOf(item.label) !== -1)
+
+  const handleChangeDefaultQueue = (event: React.ChangeEvent<HTMLInputElement>) => {
+    defaultQueueChange(event.target.value)
+  }
+
+  const handleChangeDefaultQueueItem = (_: React.SyntheticEvent<Element, Event>, newValue: SelectValues | null) => {
+    if (!newValue) {
+      return
+    }
+
+    defaultQueueItemChange(newValue.label)
+  }
+
+  const handleChangeExcludedNumbers = (_: React.SyntheticEvent, newValue: SelectValues[]) => {
+    if (!newValue) {
+      return
+    }
+    excludedNumbersChange(newValue)
+  }
+
+  const handleChangeRobotState = (event: React.ChangeEvent<HTMLInputElement>) => {
+    robotStateChange(event.target.value)
+  }
+
   return (
-    isLoading ? <p>Loading...</p> : <>
+    isLoading ? <CircularProgress /> : <>
       <Box display='flex' flexDirection='row' justifyContent='space-around'>
-        <Days weekDays={weekDays}/>
+        {weekDays && <Days weekDays={weekDays} />}
         <Box display='flex' flexDirection='column' justifyContent='space-between' gap={4}>
           <Box>
             <Typography variant='h6' paddingBottom={'1rem'}>Настройка звонков</Typography>
             <Box display='flex' flexDirection='row' justifyContent='space-around' gap={5}>
-              <NumericFormat customInput={TextField} id="outlined-basic" label="Интервал" variant="outlined" type="number"
-                allowNegative={false} value={intensity} onChange={(event) => intervalChange(event.target.value)}>
+              <NumericFormat
+                customInput={TextField}
+                id="outlined-basic"
+                label="Интервал"
+                variant="outlined"
+                allowNegative={false}
+                value={intensity}
+                onChange={(event) => intervalChange(event.target.value)}>
               </NumericFormat>
-              <NumericFormat customInput={TextField} id="outlined-basic" label="Время жизни" variant="outlined" type='number'
-                allowNegative={false} value={lifetime} onChange={(event) => lifeTimeChange(event.target.value)}>
+              <NumericFormat
+                customInput={TextField}
+                id="outlined-basic"
+                label="Время жизни"
+                variant="outlined"
+                allowNegative={false}
+                value={lifetime}
+                onChange={(event) => lifeTimeChange(event.target.value)}>
               </NumericFormat>
-              <NumericFormat customInput={TextField} id="outlined-basic" label="Количество попыток" variant="outlined" type='number'
-                allowNegative={false} value={attempt} onChange={(event) => attemptsChange(event.target.value)}>
+              <NumericFormat
+                customInput={TextField}
+                id="outlined-basic"
+                label="Количество попыток"
+                variant="outlined"
+                allowNegative={false}
+                value={attempt}
+                onChange={(event) => attemptsChange(event.target.value)}>
               </NumericFormat>
-
             </Box>
           </Box>
           <Box>
@@ -78,28 +118,28 @@ const App = observer(() => {
               aria-labelledby="demo-form-control-label-placement"
               name="position"
               defaultValue={useDefaultQueue}
-              onChange={(event) => defaultQueueChange(event.target.value)}
+              onChange={handleChangeDefaultQueue}
             >
               <FormControlLabel
-                value={0}
+                value={RadioQueue.off}
                 control={<Radio />}
                 label="Выключен"
                 labelPlacement="end"
               />
               <FormControlLabel
-                value={1}
+                value={RadioQueue.notCalled}
                 control={<Radio />}
                 label="Не вызывались"
                 labelPlacement="end"
               />
               <FormControlLabel
-                value={2}
+                value={RadioQueue.called}
                 control={<Radio />}
                 label="Вызывались"
                 labelPlacement="end"
               />
               <FormControlLabel
-                value={3}
+                value={RadioQueue.always}
                 control={<Radio />}
                 label="Всегда"
                 labelPlacement="end"
@@ -111,8 +151,8 @@ const App = observer(() => {
               options={arrayQueueOptions}
               sx={{ width: 300 }}
               renderInput={(params) => <TextField {...params} label="Выбрать" />}
-              value={defaultQueueName}
-              onChange={(event, newValue) => defaultQueueItemChange(newValue.id)}
+              value={arrayQueueOptions.find((item) => item.label === defaultQueueName) ?? null}
+              onChange={handleChangeDefaultQueueItem}
             />}
           </Box>
           <Box>
@@ -122,10 +162,10 @@ const App = observer(() => {
               disablePortal
               id="combo-box-demo"
               options={excludedNumbersOptions}
-              value={ignoreCompanyNumbers}
+              value={chooseIgnoreCompanyNumbers}
               sx={{ width: 300 }}
               renderInput={(params) => <TextField {...params} label="Выбрать" />}
-              onChange={(event, newValue) => excludedNumbersChange(newValue)}
+              onChange={handleChangeExcludedNumbers}
             />
           </Box>
           <Box>
@@ -135,22 +175,22 @@ const App = observer(() => {
               aria-labelledby="demo-form-control-label-placement"
               name="position"
               defaultValue={robotState}
-              onChange={(event) => robotStateChange(event.target.value)}
+              onChange={handleChangeRobotState}
             >
               <FormControlLabel
-                value={0}
+                value={RadioRobotState.off}
                 control={<Radio />}
                 label="Выключен"
                 labelPlacement="end"
               />
               <FormControlLabel
-                value={1}
+                value={RadioRobotState.on}
                 control={<Radio />}
                 label="Включен"
                 labelPlacement="end"
               />
               <FormControlLabel
-                value={2}
+                value={RadioRobotState.sleep}
                 control={<Radio />}
                 label="Дремать ночью"
                 labelPlacement="end"

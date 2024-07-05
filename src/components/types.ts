@@ -1,3 +1,5 @@
+import { WeekDay } from "../enums/enums";
+
 export type DataSettings = {
   week: Array<Day>;
   interval: number;
@@ -9,16 +11,13 @@ export type DataSettings = {
 };
 
 export type Day = {
-  id: number;
-  title: string;
-  timeFrom: string;
-  timeTo: string;
-  isActive: boolean;
-  isChoose: boolean;
+    start: string;
+    end: string;
+    is_active: boolean;
 };
 
 export type SettingsData = {
-  weekDays: Array<object>;
+  weekDays: Record<WeekDay, Day>;
   attempt: number;
   intensity: number;
   lifetime: number;
@@ -27,4 +26,21 @@ export type SettingsData = {
   defaultQueueName: string;
   useDefaultQueue: number;
   ignoreCompanyNumbers: Array<string>;
+} | null;
+
+export type SettingsGetData = {
+  week_days: Array<object>;
+  attempt: number;
+  intensity: number;
+  lifetime: number;
+  running: string;
+  switch: number;
+  default_queue_name: string;
+  use_default_queue: number;
+  ignore_company_numbers: Array<string>;
 };
+
+export type SelectValues = {
+  label: string;
+  id: number
+}

@@ -1,204 +1,204 @@
-import axios from "axios";
-import { Day, SettingsData } from "../components/types";
+import { SelectValues, SettingsData } from "../components/types";
 import { makeAutoObservable } from "mobx";
-import { EditSettings, GetSettings } from "../api";
-import { WeekDays } from "../enums/enums";
+import { GetSettings } from "../api/api";
+import { WeekDay } from "../enums/enums";
 
 class SalevanStore {
-  data: SettingsData = {};
-  /* week: Array<Day> = [
-    {
-      id: 1,
-      title: "Понедельник",
-      timeFrom: "10:00",
-      timeTo: "11:00",
-      isActive: false,
-      isChoose: false,
-    },
-    {
-      id: 2,
-      title: "Вторник",
-      timeFrom: "20:00",
-      timeTo: "21:00",
-      isActive: false,
-      isChoose: false,
-    },
-    {
-      id: 3,
-      title: "Среда",
-      timeFrom: "10:00",
-      timeTo: "15:00",
-      isActive: false,
-      isChoose: false,
-    },
-    {
-      id: 4,
-      title: "Четверг",
-      timeFrom: "10:00",
-      timeTo: "15:00",
-      isActive: false,
-      isChoose: false,
-    },
-    {
-      id: 5,
-      title: "Пятница",
-      timeFrom: "12:00",
-      timeTo: "20:00",
-      isActive: false,
-      isChoose: false,
-    },
-    {
-      id: 6,
-      title: "Суббота",
-      timeFrom: "15:00",
-      timeTo: "16:00",
-      isActive: false,
-      isChoose: false,
-    },
-    {
-      id: 7,
-      title: "Воскресенье",
-      timeFrom: "16:00",
-      timeTo: "20:00",
-      isActive: false,
-      isChoose: false,
-    },
-  ]; */
-  /* intensity: number = 0;
-  lifetime: number = 0;
-  attempt: number = 0; */
-  defaultQueue: string = "Выключен";
-  arrayQueueOptions: Array<object> = [
+  data: SettingsData = null;
+  arrayQueueOptions: Array<SelectValues> = [
     { label: "AAAA", id: 1 },
     { label: "BBBB", id: 2 },
   ];
-  itemQueueId: number = 0;
-  excludedNumbersOptions: Array<object> = [
+  excludedNumbersOptions: Array<SelectValues> = [
     { label: "AAAA", id: 1 },
     { label: "BBBB", id: 2 },
     { label: "CCCC", id: 3 },
   ];
-  excludedNumbers: Array<object> = [];
-  robotState: string = "Выключен";
-  allTimeFrom: string = "";
-  allTimeTo: string = "";
-  arrayChooseDays: Array<string> = [];
-  allIsActive: boolean = false;
-  allIsChoose: boolean = false;
-  isLoading: boolean = false
+  allTimeFrom = "";
+  allTimeTo = "";
+  arrayChooseDays: WeekDay[] = [];
+  allIsActive = false;
+  allIsChoose = false;
+  isLoading = false;
+  errorTimeFrom = false;
+  errorTimeTo = false;
 
   constructor() {
     makeAutoObservable(this);
   }
 
   intervalChange = (currentIntensity: string) => {
-    this.data.intensity = +currentIntensity;
+    if (this.data) {
+      this.data.intensity = Number(currentIntensity);
+    }
   };
 
   lifeTimeChange = (currentLifeTime: string) => {
-    this.data.lifetime = +currentLifeTime;
+    if (this.data) {
+      this.data.lifetime = Number(currentLifeTime);
+    }
   };
 
   attemptsChange = (currentAttempt: string) => {
-    this.data.attempt = +currentAttempt;
+    if (this.data) {
+      this.data.attempt = Number(currentAttempt);
+    }
   };
 
   robotStateChange = (cuurentRobotState: string) => {
-    this.data.robotState = +cuurentRobotState;
+    if (this.data) {
+      this.data.robotState = Number(cuurentRobotState);
+    }
   };
 
   defaultQueueChange = (currentDefaultQueue: string) => {
-    this.data.defaultQueueName = currentDefaultQueue;
-  };
-
-  isChooseChange = (dayKey: string, checked: boolean) => {
-    if (checked) {
-      this.arrayChooseDays.push(dayKey);
-    } else {
-      const index = this.arrayChooseDays.indexOf(dayKey)
-      this.arrayChooseDays.splice(index, 1)
+    if (this.data) {
+      this.data.useDefaultQueue = +currentDefaultQueue;
     }
-    console.log(this.arrayChooseDays)
   };
 
-  isActiveChange = (dayKey: string, checked: boolean) => {
-    this.data.weekDays[dayKey].isActive = checked;
+  isChooseChange = (dayKey: WeekDay, checked: boolean) => {
+    checked
+      ? this.arrayChooseDays.push(dayKey)
+      : (this.arrayChooseDays = this.arrayChooseDays.filter(
+          (day) => day !== dayKey
+        ));
   };
 
-  allTimeFromChange = (currentTimeFrom: string) => {
+  isActiveChange = (dayKey: WeekDay, checked: boolean) => {
+    if (this.data) {
+      this.data.weekDays[dayKey].is_active = checked;
+    }
+  };
+
+  timeFromChange = (currentTimeFrom: string) => {
     this.allTimeFrom = currentTimeFrom;
+    if (!this.errorTimeFrom) {
+      this.allTimeFromChange();
+    }
   };
 
-  allTimeToChange = (currentTimeTo: string) => {
+  timeToChange = (currentTimeTo: string) => {
     this.allTimeTo = currentTimeTo;
+    if (!this.errorTimeTo) {
+      this.allTimeToChange();
+    }
+  };
+
+  allTimeFromChange = () => {
+    this.arrayChooseDays.forEach((item) => {
+      if (this.data) {
+        this.data.weekDays[item].start = this.allTimeFrom;
+      }
+    });
+    document.getElementById("timeTo")?.focus();
+  };
+
+  allTimeToChange = () => {
+    this.arrayChooseDays.forEach((item) => {
+      if (this.data) {
+        this.data.weekDays[item].end = this.allTimeTo;
+      }
+    });
   };
 
   allTimeChange = () => {
-    console.log(this.arrayChooseDays)
-    for (let i = 0; i < this.arrayChooseDays.length; i++) {
-      this.data.weekDays[this.arrayChooseDays[i]].start = this.allTimeFrom;
-      this.data.weekDays[this.arrayChooseDays[i]].end = this.allTimeTo;
-    }
+    this.arrayChooseDays.forEach((item) => {
+      if (this.data) {
+        this.data.weekDays[item].start = this.allTimeFrom;
+        this.data.weekDays[item].end = this.allTimeTo;
+      }
+    });
   };
 
   allIsActiveChange = (currentAllIsActive: boolean) => {
-    const keys = Object.keys(this.data.weekDays)
-    for (let i = 0; i < keys.length; i++) {
-      const key = keys[i]
-      this.data.weekDays[key].is_active = currentAllIsActive;
-    }
     this.allIsActive = currentAllIsActive;
+    if (this.data) {
+      Object.keys(this.data.weekDays).forEach((item) => {
+        if (this.data) {
+          this.data.weekDays[item as WeekDay].is_active = this.allIsActive;
+        }
+      });
+    }
   };
 
   allIsChooseChange = (currentAllIsChoose: boolean) => {
-    const keys = Object.keys(this.data.weekDays)
-    for (let i = 0; i < keys.length; i++) {
-      const key = keys[i]
-      currentAllIsChoose 
-      ? this.arrayChooseDays.push(key)
-      : this.arrayChooseDays = []
-    }
+    currentAllIsChoose
+      ? (this.arrayChooseDays = Object.values(WeekDay))
+      : (this.arrayChooseDays = []);
     this.allIsActive = currentAllIsChoose;
   };
 
-  defaultQueueItemChange = (currentDefaultQueueItem: number) => {
-    this.itemQueueId = currentDefaultQueueItem;
+  defaultQueueItemChange = (currentDefaultQueueItem: string) => {
+    if (this.data) {
+      this.data.defaultQueueName = currentDefaultQueueItem;
+    }
   };
 
-  excludedNumbersChange = (currentExcludedNumber: object) => {
-    this.excludedNumbers.push(currentExcludedNumber);
+  excludedNumbersChange = (currentExcludedNumbers: Array<SelectValues>) => {
+    if (this.data) {
+      this.data.ignoreCompanyNumbers = currentExcludedNumbers.map(
+        ({ label }) => label
+      );
+    }
   };
 
   setIsLoading = (status: boolean) => {
-    this.isLoading = status
-  }
+    this.isLoading = status;
+  };
 
-  getSettingsRequest = (settingsData: object) => {
-    this.data.weekDays = settingsData.week_days
-    this.data.defaultQueueName = settingsData.default_queue_name
-    this.data.ignoreCompanyNumbers = settingsData.ignore_company_numbers
-    this.data.useDefaultQueue = settingsData.use_default_queue
-    this.data.attempt = settingsData.attempt
-    this.data.intensity = settingsData.intensity
-    this.data.lifetime = settingsData.lifetime
-    this.data.running = settingsData.running
-    this.data.robotState = settingsData.switch
-  }
+  getSettingsRequest = async () => {
+    try {
+      this.isLoading = true;
+      const response = await GetSettings();
+      const {
+        default_queue_name,
+        week_days,
+        use_default_queue,
+        ignore_company_numbers,
+        switch: robotState,
+        ...other
+      } = response.data;
+
+      this.data = {
+        weekDays: week_days,
+        defaultQueueName: default_queue_name,
+        useDefaultQueue: use_default_queue,
+        ignoreCompanyNumbers: ignore_company_numbers,
+        robotState,
+        ...other,
+      };
+      this.isLoading = false;
+      console.log(this.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   editSettingsRequest = () => {
-    const post = {week_days: this.data.weekDays,
-    attempt: this.data.attempt,
-    intensity: this.data.intensity,
-    lifetime: this.data.lifetime,
-    running: this.data.running,
-    // 0=Выключен, 1=включен, 2=дремлет
-    switch: this.data.robotState,
-    default_queue_name: this.data.defaultQueueName,
-    use_default_queue: this.data.useDefaultQueue,
-    ignore_company_numbers: this.data.ignoreCompanyNumbers}
-    console.log(post)
-  }
-  
+    if (this.data) {
+      const post = {
+        week_days: this.data.weekDays,
+        attempt: this.data.attempt,
+        intensity: this.data.intensity,
+        lifetime: this.data.lifetime,
+        running: this.data.running,
+        switch: this.data.robotState,
+        default_queue_name: this.data.defaultQueueName,
+        use_default_queue: this.data.useDefaultQueue,
+        ignore_company_numbers: this.data.ignoreCompanyNumbers,
+      };
+      console.log(post);
+    }
+  };
+
+  errorTimeFromChange = (currentValue: boolean) => {
+    this.errorTimeFrom = currentValue;
+  };
+
+  errorTimeToChange = (currentValue: boolean) => {
+    this.errorTimeTo = currentValue;
+  };
 }
 
 export default new SalevanStore();
